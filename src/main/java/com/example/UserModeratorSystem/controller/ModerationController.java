@@ -1,9 +1,6 @@
 package com.example.UserModeratorSystem.controller;
 
-import com.example.UserModeratorSystem.dto.CommentDTO;
-import com.example.UserModeratorSystem.dto.PostDTO;
-import com.example.UserModeratorSystem.dto.ReviewDTO;
-import com.example.UserModeratorSystem.dto.ApiResponseDTO;
+import com.example.UserModeratorSystem.dto.*;
 import com.example.UserModeratorSystem.constants.Status;
 import com.example.UserModeratorSystem.security.UserPrincipal;
 import com.example.UserModeratorSystem.service.CommentService;
@@ -66,10 +63,10 @@ public class ModerationController {
     }
 
  //     Review a comment
-      @PreAuthorize("hasRole('MODERATOR') or hasRole('SUPER_ADMIN')")
+     @PreAuthorize("hasRole('MODERATOR') or hasRole('SUPER_ADMIN')")
      @PostMapping("/comments/{commentId}/review")
 
-public ResponseEntity<ApiResponseDTO<Map<String, Object>>> reviewComment(
+    public ResponseEntity<ApiResponseDTO<Map<String, Object>>> reviewComment(
         @PathVariable Long commentId,
         @AuthenticationPrincipal UserPrincipal userPrincipal,
         @RequestBody ReviewDTO reviewDTO) {
@@ -77,6 +74,22 @@ public ResponseEntity<ApiResponseDTO<Map<String, Object>>> reviewComment(
     Map<String, Object> data = commentService.reviewComment(commentId, userPrincipal.getUser(), reviewDTO);
     return ResponseEntity.ok(new ApiResponseDTO<>(true, "Comment reviewed successfully", data));
 }
+
+//To Retire a Moderator
+@PreAuthorize("hasRole('MODERATOR')")
+@PutMapping("/retire")
+public ResponseEntity<ApiResponseDTO<UserDTO>> retireAsModerator(
+        @AuthenticationPrincipal UserPrincipal userPrincipal) {
+
+    UserDTO updatedUser = userService.retireAsModerator(userPrincipal.getUser());
+    return ResponseEntity.ok(new ApiResponseDTO<>(
+            true,
+            "You have successfully retired as a moderator. You are now a regular user.",
+            updatedUser
+    ));
+}
+
+
 
 
 

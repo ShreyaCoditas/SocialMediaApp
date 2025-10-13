@@ -13,6 +13,10 @@ public class ResponseDTO {
     private String email;
     private String token;
     private String role;
+
+    public ResponseDTO(String username) {
+    this.username = username;
+    }
 }
 
 

@@ -241,4 +241,30 @@ public class UserService {
         return "Moderator deleted successfully";
     }
 
+    //To Retire as Moderator
+    public UserDTO retireAsModerator(User user) {
+
+        User existingUser = userRepository.findById(user.getId())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+
+        if (!existingUser.getRole().getName().name().equals("MODERATOR")) {
+            throw new RuntimeException("You are not a moderator");
+        }
+
+
+        Role userRole = roleRepository.findByName(RoleName.USER);
+        existingUser.setRole(userRole);
+        existingUser.setUpdatedAt(LocalDateTime.now());
+
+        userRepository.save(existingUser);
+        UserDTO dto = new UserDTO();
+        dto.setId(existingUser.getId());
+        dto.setUsername(existingUser.getUsername());
+        dto.setEmail(existingUser.getEmail());
+        dto.setRole(existingUser.getRole().getName().name());
+        return dto;
+    }
+
+
 }
