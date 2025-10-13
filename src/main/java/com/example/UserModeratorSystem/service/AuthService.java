@@ -6,6 +6,9 @@ import com.example.UserModeratorSystem.entity.Role;
 import com.example.UserModeratorSystem.constants.RoleName;
 import com.example.UserModeratorSystem.entity.User;
 import com.example.UserModeratorSystem.dto.LoginDTO;
+import com.example.UserModeratorSystem.exception.EmailAlreadyExistsException;
+import com.example.UserModeratorSystem.exception.EmailNotFoundException;
+import com.example.UserModeratorSystem.exception.InvalidPasswordException;
 import com.example.UserModeratorSystem.exception.UserAlreadyExistsException;
 import com.example.UserModeratorSystem.repository.RoleRepository;
 import com.example.UserModeratorSystem.repository.UserRepository;
@@ -41,9 +44,16 @@ public class AuthService {
 
     public User register(RegisterDTO userDto){
 
-        if (userRepository.findByUsername(userDto.getUsername()) != null) {
+        //check if username exists
+        if (userRepository.findByUsername(userDto.getUsername()).isPresent()) {
             throw new UserAlreadyExistsException("Username already exists");
         }
+
+        // Check if email already exists
+        if (userRepository.findByEmail(userDto.getEmail()).isPresent()) {
+            throw new EmailAlreadyExistsException("Email already exists");
+        }
+
         User user=objectMapper.convertValue(userDto,User.class);
         user.setPassword(encoder.encode(userDto.getPassword()));
 
@@ -55,24 +65,32 @@ public class AuthService {
 
 
     public ResponseDTO verify(LoginDTO userDto) {
-        Authentication authentication = authManager.authenticate(
-                new UsernamePasswordAuthenticationToken(userDto.getEmail(), userDto.getPassword())
-        );
+        // First, check if the email exists
+        User user = userRepository.findByEmail(userDto.getEmail())
+                .orElseThrow(() -> new EmailNotFoundException("Email not found"));
 
-        if (authentication.isAuthenticated()) {
+        // Authenticate the credentials
+        try {
+            Authentication authentication = authManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(userDto.getEmail(), userDto.getPassword())
+            );
 
-            String jwt = jwtUtil.generateToken(userDto.getEmail());
+            // If authentication succeeds
+            if (authentication.isAuthenticated()) {
+                String jwt = jwtUtil.generateToken(userDto.getEmail());
+                String role = user.getRole().getName().name();
+                return new ResponseDTO(user.getId(), user.getUsername(), user.getEmail(), jwt, role);
+            } else {
+                // Should rarely reach here
+                throw new InvalidPasswordException("Invalid password");
+            }
 
-            User user = userRepository.findByEmail(userDto.getEmail())
-                    .orElseThrow(() -> new RuntimeException("User not found"));
-
-            String role = user.getRole().getName().name();
-
-            return new ResponseDTO(user.getId(),user.getUsername(),user.getEmail(),jwt,role);
-        } else {
-            throw new RuntimeException("Invalid Credentials");
+        } catch (org.springframework.security.authentication.BadCredentialsException ex) {
+            // Bad credentials means password mismatch
+            throw new InvalidPasswordException("Invalid password");
         }
     }
+
 }
 
 

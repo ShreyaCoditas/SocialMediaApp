@@ -21,21 +21,21 @@ public class AuthController {
     private AuthService service;
 
     // Register API
-    @PostMapping("/register")
-    public ResponseEntity<ApiResponseDTO<ResponseDTO>> register(@Valid @RequestBody RegisterDTO userDto) {
-        User user = service.register(userDto);
-        ResponseDTO responseDTO = new ResponseDTO("Registration successful for " + user.getUsername());
-        ApiResponseDTO<ResponseDTO> apiResponseDTO = new ApiResponseDTO<>(true, "User registered successfully",responseDTO);
-        return ResponseEntity.status(HttpStatus.CREATED).body(apiResponseDTO);
-    }
-
 //    @PostMapping("/register")
-//    public ResponseEntity<ApiResponseDTO<Void>> register(@Valid @RequestBody RegisterDTO userDto) {
+//    public ResponseEntity<ApiResponseDTO<ResponseDTO>> register(@Valid @RequestBody RegisterDTO userDto) {
 //        User user = service.register(userDto);
-//        // Use constructor without data
-//        ApiResponseDTO<Void> apiResponseDTO = new ApiResponseDTO<>(true, "User registered successfully");
+//        ResponseDTO responseDTO = new ResponseDTO("Registration successful for " + user.getUsername());
+//        ApiResponseDTO<ResponseDTO> apiResponseDTO = new ApiResponseDTO<>(true, "User registered successfully",responseDTO);
 //        return ResponseEntity.status(HttpStatus.CREATED).body(apiResponseDTO);
 //    }
+
+    @PostMapping("/register")
+    public ResponseEntity<ApiResponseDTO<Void>> register(@Valid @RequestBody RegisterDTO userDto) {
+        User user = service.register(userDto);
+        // Use constructor without data
+        ApiResponseDTO<Void> apiResponseDTO = new ApiResponseDTO<>(true, "User registered successfully");
+        return ResponseEntity.status(HttpStatus.CREATED).body(apiResponseDTO);
+    }
 
 
     // Login API

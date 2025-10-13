@@ -98,7 +98,11 @@ public class UserService {
                     dto.setUsername(request.getUser().getUsername());
                     dto.setUserId( request.getUser().getId());
                     dto.setStatus(request.getStatus().name());
-                    dto.setReviewedBy(request.getReviewedBy().getId() );
+                    if (request.getReviewedBy() != null) {
+                        dto.setReviewedBy(request.getReviewedBy().getId());
+                    } else {
+                        dto.setReviewedBy(null);
+                    }
                     return dto;
                 })
                 .collect(Collectors.toList());
