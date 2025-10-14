@@ -12,6 +12,7 @@ import com.example.UserModeratorSystem.entity.ReviewLog;
 import com.example.UserModeratorSystem.entity.User;
 import com.example.UserModeratorSystem.exception.CommentNotFoundException;
 import com.example.UserModeratorSystem.exception.PostNotFoundException;
+import com.example.UserModeratorSystem.exception.UnauthorizedActionException;
 import com.example.UserModeratorSystem.repository.CommentRepository;
 import com.example.UserModeratorSystem.repository.PostRepository;
 import com.example.UserModeratorSystem.repository.ReviewLogRepository;
@@ -130,7 +131,7 @@ public class CommentService {
                 .orElseThrow(() -> new CommentNotFoundException("Comment not found"));
 
         if (!comment.getUser().getId().equals(user.getId())) {
-            throw new RuntimeException("You are not authorized to edit this comment");
+            throw new UnauthorizedActionException("You are not authorized to edit this comment");
         }
 
         if (comment.getStatus() == Status.REJECTED) {
@@ -162,7 +163,7 @@ public class CommentService {
 
         // If not SUPER_ADMIN, ensure user owns the comment
         if (!role.equals("SUPER_ADMIN") && !comment.getUser().getId().equals(user.getId())) {
-            throw new RuntimeException("You are not authorized to delete this comment");
+            throw new UnauthorizedActionException("You are not authorized to delete this comment");
         }
 
         commentRepository.delete(comment);
@@ -203,7 +204,7 @@ public class CommentService {
     // Review a comment
     public Map<String, Object> reviewComment(Long commentId, User reviewer, ReviewDTO reviewDTO) {
         Comment comment = commentRepository.findById(commentId)
-                .orElseThrow(() -> new RuntimeException("Comment not found"));
+                .orElseThrow(() -> new CommentNotFoundException("Comment not found"));
 
         ReviewAction action = ReviewAction.valueOf(reviewDTO.getAction());
 
@@ -257,7 +258,7 @@ public class CommentService {
     //  helper method to update comment status:
     private Status updateCommentStatus(Long commentId) {
         Comment comment = commentRepository.findById(commentId)
-                .orElseThrow(() -> new RuntimeException("Comment not found"));
+                .orElseThrow(() -> new CommentNotFoundException("Comment not found"));
 
         List<ReviewLog> reviews = reviewLogRepository.findByEntityIdAndEntityType(commentId, EntityType.COMMENT);
 

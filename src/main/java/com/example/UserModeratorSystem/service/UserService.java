@@ -1,20 +1,21 @@
 package com.example.UserModeratorSystem.service;
 
 import com.example.UserModeratorSystem.constants.*;
-import com.example.UserModeratorSystem.dto.ApiResponseDTO;
-import com.example.UserModeratorSystem.dto.ModeratorRequestDTO;
-import com.example.UserModeratorSystem.dto.ReviewDTO;
-import com.example.UserModeratorSystem.dto.UserDTO;
+import com.example.UserModeratorSystem.dto.*;
 import com.example.UserModeratorSystem.entity.*;
+import com.example.UserModeratorSystem.exception.*;
 import com.example.UserModeratorSystem.repository.*;
+import com.example.UserModeratorSystem.security.JWTUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -41,6 +42,59 @@ public class UserService {
 
     @Autowired
     private RoleRepository roleRepository;
+
+    @Autowired
+    private JWTUtil jwtUtil;
+
+    @Autowired
+    private AuthenticationManager authManager;
+
+    private BCryptPasswordEncoder encoder=new BCryptPasswordEncoder(12);
+
+    public User register(RegisterDTO userDto){
+
+        //convert email to Lowercase for consistency
+        String normalizedEmail=userDto.getEmail().toLowerCase();
+
+        //check if username exists
+        if (userRepository.findByUsername(userDto.getUsername()).isPresent()) {
+            throw new UserAlreadyExistsException("Username already exists");
+        }
+
+        // Check if email already exists
+        if (userRepository.findByEmailIgnoreCase(normalizedEmail).isPresent()) {
+            throw new EmailAlreadyExistsException("Email already exists");
+        }
+
+        User user=objectMapper.convertValue(userDto,User.class);
+        user.setEmail(normalizedEmail);
+        user.setPassword(encoder.encode(userDto.getPassword()));
+        Role defaultRole = roleRepository.findByName(RoleName.USER);
+        user.setRole(defaultRole);
+        return userRepository.save(user);
+    }
+
+    public ResponseDTO login(LoginDTO userDto) {
+        // First, check if the email exists
+        User user = userRepository.findByEmailIgnoreCase(userDto.getEmail())
+                .orElseThrow(() -> new EmailNotFoundException("Email not found"));
+
+        try {
+            Authentication authentication = authManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(userDto.getEmail(), userDto.getPassword())
+            );
+            if (authentication.isAuthenticated()) {
+                String jwt = jwtUtil.generateToken(userDto.getEmail().toLowerCase());
+                String role = user.getRole().getName().name();
+                return new ResponseDTO(user.getId(), user.getUsername(), user.getEmail(), jwt, role);
+            } else {
+                throw new InvalidPasswordException("Invalid password");
+            }
+
+        } catch (org.springframework.security.authentication.BadCredentialsException ex) {
+            throw new InvalidPasswordException("Invalid password");
+        }
+    }
 
 
     //user profile
@@ -215,7 +269,7 @@ public class UserService {
     // Delete user (only if they are a normal USER)
     public String deleteUser(Long userId, User superAdmin) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new UserNotFoundException("User not found"));
 
          //  Prevent Super Admin from deleting themselves
         if (user.getId().equals(superAdmin.getId())) {
@@ -249,7 +303,7 @@ public class UserService {
     public UserDTO retireAsModerator(User user) {
 
         User existingUser = userRepository.findById(user.getId())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new UserNotFoundException("User not found"));
 
 
         if (!existingUser.getRole().getName().name().equals("MODERATOR")) {

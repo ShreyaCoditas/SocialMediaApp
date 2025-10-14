@@ -9,6 +9,7 @@ import com.example.UserModeratorSystem.constants.Status;
 import com.example.UserModeratorSystem.entity.ReviewLog;
 import com.example.UserModeratorSystem.entity.User;
 import com.example.UserModeratorSystem.exception.PostNotFoundException;
+import com.example.UserModeratorSystem.exception.UnauthorizedActionException;
 import com.example.UserModeratorSystem.repository.PostRepository;
 import com.example.UserModeratorSystem.repository.ReviewLogRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -53,42 +54,114 @@ public class PostService {
     }
 
     //homepage-to get all approved posts and comments
+//    public List<PostWithCommentsDTO> getHomepagePosts() {
+//        return postRepository.findAll().stream()
+//                .filter(p -> p.getStatus() == Status.APPROVED)
+//                .map(post -> {
+//                    // Convert Post → PostDTO
+//                    PostDTO postDTO = new PostDTO();
+//                    postDTO.setId(post.getId());
+//                    postDTO.setTitle(post.getTitle());
+//                    postDTO.setContent(post.getContent());
+//                    postDTO.setUserId( post.getUser().getId());
+//                    postDTO.setUsername( post.getUser().getUsername());
+//                    postDTO.setStatus(post.getStatus().name());
+//                    postDTO.setCreatedAt(post.getCreatedAt());
+//                    postDTO.setUpdatedAt(post.getUpdatedAt());
+//
+//                    // Convert comments → CommentDTO
+//                    List<CommentDTO> commentDTOs = new ArrayList<>();
+//                    if (post.getComments() != null) {
+//                        commentDTOs = post.getComments().stream()
+//                                .filter(c -> c.getStatus() == Status.APPROVED)
+//                                .map(c -> {
+//                                    CommentDTO dto = new CommentDTO();
+//                                    dto.setId(c.getId());
+//                                    dto.setContent(c.getContent());
+//                                    dto.setPostId(post.getId());
+//                                    dto.setUserId( c.getUser().getId());
+//                                    dto.setUsername( c.getUser().getUsername());
+//                                    dto.setStatus(c.getStatus().name());
+//                                    dto.setCreatedAt(c.getCreatedAt());
+//                                    dto.setUpdatedAt(c.getUpdatedAt());
+//                                    return dto;
+//                                })
+//                                .toList();
+//                    }
+//
+//                    return new PostWithCommentsDTO(postDTO, commentDTOs);
+//                })
+//                .toList();
+//    }
+
+//    public List<PostDTO> getHomepagePosts() {
+//        return postRepository.findAll().stream()
+//                .filter(p -> p.getStatus() == Status.APPROVED)
+//                .map(post -> {
+//                    PostDTO postDTO = new PostDTO();
+//                    postDTO.setId(post.getId());
+//                    postDTO.setUsername(post.getUser().getUsername());
+//                    postDTO.setUserId(post.getUser().getId());
+//                    postDTO.setTitle(post.getTitle());
+//                    postDTO.setContent(post.getContent());
+//                    postDTO.setStatus(post.getStatus().name());
+//                    postDTO.setCreatedAt(post.getCreatedAt());
+//                    postDTO.setUpdatedAt(post.getUpdatedAt());
+//
+//                    // 🟢 Set comments directly inside the postDTO
+//                    List<CommentDTO> commentDTOs = post.getComments().stream()
+//                            .map(c -> {
+//                                CommentDTO dto = new CommentDTO();
+//                                dto.setId(c.getId());
+//                                    dto.setContent(c.getContent());
+//                                    dto.setPostId(post.getId());
+//                                    dto.setUserId( c.getUser().getId());
+//                                    dto.setUsername( c.getUser().getUsername());
+//                                    dto.setStatus(c.getStatus().name());
+//                                    dto.setCreatedAt(c.getCreatedAt());
+//                                    dto.setUpdatedAt(c.getUpdatedAt());
+//                                return dto;
+//                            })
+//                            .toList();
+//
+//                    postDTO.setComments(commentDTOs);
+//
+//                    return postDTO;
+//                })
+//                .toList();
+//    }
+
     public List<PostWithCommentsDTO> getHomepagePosts() {
         return postRepository.findAll().stream()
-                .filter(p -> p.getStatus() == Status.APPROVED)
+                .filter(post -> post.getStatus() == Status.APPROVED)
                 .map(post -> {
-                    // Convert Post → PostDTO
-                    PostDTO postDTO = new PostDTO();
+                    PostWithCommentsDTO postDTO = new PostWithCommentsDTO();
                     postDTO.setId(post.getId());
+                    postDTO.setUsername(post.getUser().getUsername());
+                    postDTO.setUserId(post.getUser().getId());
                     postDTO.setTitle(post.getTitle());
                     postDTO.setContent(post.getContent());
-                    postDTO.setUserId( post.getUser().getId());
-                    postDTO.setUsername( post.getUser().getUsername());
                     postDTO.setStatus(post.getStatus().name());
                     postDTO.setCreatedAt(post.getCreatedAt());
                     postDTO.setUpdatedAt(post.getUpdatedAt());
 
-                    // Convert comments → CommentDTO
-                    List<CommentDTO> commentDTOs = new ArrayList<>();
-                    if (post.getComments() != null) {
-                        commentDTOs = post.getComments().stream()
-                                .filter(c -> c.getStatus() == Status.APPROVED)
-                                .map(c -> {
-                                    CommentDTO dto = new CommentDTO();
-                                    dto.setId(c.getId());
-                                    dto.setContent(c.getContent());
-                                    dto.setPostId(post.getId());
-                                    dto.setUserId( c.getUser().getId());
-                                    dto.setUsername( c.getUser().getUsername());
-                                    dto.setStatus(c.getStatus().name());
-                                    dto.setCreatedAt(c.getCreatedAt());
-                                    dto.setUpdatedAt(c.getUpdatedAt());
-                                    return dto;
-                                })
-                                .toList();
-                    }
+                    List<CommentDTO> commentDTOs = post.getComments().stream()
+                            .map(comment -> {
+                                CommentDTO dto = new CommentDTO();
+                                dto.setId(comment.getId());
+                                dto.setUsername(comment.getUser().getUsername());
+                                dto.setPostId(post.getId());
+                                dto.setUserId(comment.getUser().getId());
+                                dto.setContent(comment.getContent());
+                                dto.setStatus(comment.getStatus().name());
+                                dto.setCreatedAt(comment.getCreatedAt());
+                                dto.setUpdatedAt(comment.getUpdatedAt());
+                                return dto;
+                            })
+                            .toList();
 
-                    return new PostWithCommentsDTO(postDTO, commentDTOs);
+                    postDTO.setComments(commentDTOs);
+                    return postDTO;
                 })
                 .toList();
     }
@@ -102,10 +175,13 @@ public class PostService {
 
         PostDTO postDTO = new PostDTO();
         postDTO.setId(post.getId());
+        postDTO.setUsername(post.getUser().getUsername());
         postDTO.setUserId(post.getUser().getId());
         postDTO.setTitle(post.getTitle());
         postDTO.setContent(post.getContent());
         postDTO.setStatus(post.getStatus().name());
+        postDTO.setCreatedAt(post.getCreatedAt());
+        postDTO.setUpdatedAt(post.getUpdatedAt());
         return postDTO;
     }
 
@@ -116,7 +192,7 @@ public class PostService {
                 .orElseThrow(() -> new PostNotFoundException("Post not found"));
 
         if (!post.getUser().getId().equals(user.getId())) {
-            throw new RuntimeException("You are not authorized to edit this post");
+            throw new UnauthorizedActionException("You are not authorized to edit this post");
         }
 
         if(post.getStatus()==Status.REJECTED){
@@ -172,7 +248,7 @@ public class PostService {
         // If not SUPER_ADMIN, ensure user owns the post
         String role = user.getRole().getName().name();
         if (!role.equals("SUPER_ADMIN") && !post.getUser().getId().equals(user.getId())) {
-            throw new RuntimeException("You are not authorized to delete this post");
+            throw new UnauthorizedActionException("You are not authorized to delete this post");
         }
 
         postRepository.delete(post);

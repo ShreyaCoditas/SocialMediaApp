@@ -5,6 +5,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -18,4 +19,5 @@ public class PostDTO {
     private String status;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+//    private List<CommentDTO> comments;
 }

@@ -38,12 +38,28 @@ public class PostController {
 
 
     // homepage
+//    @PreAuthorize("hasAnyRole('MODERATOR', 'SUPER_ADMIN', 'USER')")
+//    @GetMapping
+//    public ResponseEntity<ApiResponseDTO<List<PostWithCommentsDTO>>> getHomepagePosts() {
+//        List<PostWithCommentsDTO> postswithcomments = postService.getHomepagePosts();
+//        return ResponseEntity.ok(new ApiResponseDTO<>(true, "Home Page", postswithcomments));
+//    }
+
+//    @PreAuthorize("hasAnyRole('MODERATOR', 'SUPER_ADMIN', 'USER')")
+//    @GetMapping
+//    public ResponseEntity<ApiResponseDTO<List<PostDTO>>> getHomepagePosts() {
+//        List<PostDTO> posts = postService.getHomepagePosts();
+//        return ResponseEntity.ok(new ApiResponseDTO<>(true, "Home Page", posts));
+//    }
+
     @PreAuthorize("hasAnyRole('MODERATOR', 'SUPER_ADMIN', 'USER')")
     @GetMapping
     public ResponseEntity<ApiResponseDTO<List<PostWithCommentsDTO>>> getHomepagePosts() {
-        List<PostWithCommentsDTO> postswithcomments = postService.getHomepagePosts();
-        return ResponseEntity.ok(new ApiResponseDTO<>(true, "Home Page", postswithcomments));
+        List<PostWithCommentsDTO> posts = postService.getHomepagePosts();
+        return ResponseEntity.ok(new ApiResponseDTO<>(true, "Home Page", posts));
     }
+
+
 
     // Get post by ID
     @PreAuthorize("hasRole('MODERATOR') or hasRole('SUPER_ADMIN')")

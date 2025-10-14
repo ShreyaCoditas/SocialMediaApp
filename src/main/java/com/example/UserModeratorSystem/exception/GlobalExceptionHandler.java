@@ -35,28 +35,46 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<ApiResponseDTO<Void>> handleAccessDeniedException(AccessDeniedException ex) {
-        ApiResponseDTO<Void> response = new ApiResponseDTO<>(false, "Access Denied");
-        return new ResponseEntity<>(response, HttpStatus.FORBIDDEN);
+    public ResponseEntity<ApiResponseDTO<Map<String, Object>>> handleAccessDeniedException(AccessDeniedException ex) {
+        Map<String, Object> errors = new HashMap<>();
+        errors.put("message", "You do not have permission to access this resource");
+        errors.put("timestamp", LocalDateTime.now());
+        errors.put("status", HttpStatus.FORBIDDEN.value());
+
+        ApiResponseDTO<Map<String, Object>> response =
+                new ApiResponseDTO<>(false, "Access Denied", errors);
+
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
     }
+
+
 
     @ExceptionHandler(UserAlreadyExistsException.class)
     public ResponseEntity<ApiResponseDTO<Map<String, Object>>> handleUsernameExists(UserAlreadyExistsException ex) {
         Map<String, Object> errors = new HashMap<>();
-        errors.put("username", ex.getMessage());
+        errors.put("message", ex.getMessage());
         errors.put("timestamp", LocalDateTime.now());
         errors.put("status", HttpStatus.CONFLICT.value());
 
-        ApiResponseDTO<Map<String, Object>> response =
-                new ApiResponseDTO<>(false, "User registration failed", errors);
+        ApiResponseDTO<Map<String, Object>> response = new ApiResponseDTO<>(false, "User registration failed", errors);
 
         return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+    }
+
+    @ExceptionHandler(UserNotFoundException.class)
+    public ResponseEntity<ApiResponseDTO<Map<String,Object>>> handleUserNotFoundException(UserNotFoundException ex){
+        Map<String,Object> errors=new HashMap<>();
+        errors.put("message",ex.getMessage());
+        errors.put("timestamp",LocalDateTime.now());
+        errors.put("status",HttpStatus.FORBIDDEN.value());
+        ApiResponseDTO<Map<String,Object>> response=new ApiResponseDTO<>(false, "User Not Found",errors);
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
     }
 
    @ExceptionHandler(EmailNotFoundException.class)
    public ResponseEntity<ApiResponseDTO<Map<String,Object>>> handleEmailNotFound(EmailNotFoundException ex){
         Map<String,Object> errors=new HashMap<>();
-        errors.put("email",ex.getMessage());
+        errors.put("message",ex.getMessage());
         errors.put("timestamp",LocalDateTime.now());
         errors.put("status",HttpStatus.NOT_FOUND.value());
 
@@ -67,7 +85,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(InvalidPasswordException.class)
     public ResponseEntity<ApiResponseDTO<Map<String,Object>>> handleInvalidPassword(InvalidPasswordException ex){
         Map<String,Object> errors=new HashMap<>();
-        errors.put("password",ex.getMessage());
+        errors.put("message",ex.getMessage());
         errors.put("timestamp",LocalDateTime.now());
         errors.put("status",HttpStatus.BAD_REQUEST.value());
 
@@ -78,7 +96,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(EmailAlreadyExistsException.class)
     public ResponseEntity<ApiResponseDTO<Map<String,Object>>> handleEmailAlreadyExists(EmailAlreadyExistsException ex){
         Map<String,Object> errors=new HashMap<>();
-        errors.put("email",ex.getMessage());
+        errors.put("message",ex.getMessage());
         errors.put("timestamp",LocalDateTime.now());
         errors.put("status",HttpStatus.BAD_REQUEST.value());
 
@@ -89,7 +107,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(PostNotFoundException.class)
     public ResponseEntity<ApiResponseDTO<Map<String,Object>>>handlePostExceptions(PostNotFoundException ex){
         Map<String,Object> errors=new HashMap<>();
-        errors.put("post",ex.getMessage());
+        errors.put("message",ex.getMessage());
         errors.put("timestamp",LocalDateTime.now());
         errors.put("status",HttpStatus.NOT_FOUND.value());
 
@@ -100,11 +118,21 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(CommentNotFoundException.class)
     public ResponseEntity<ApiResponseDTO<Map<String,Object>>> handleCommentExceptions(CommentNotFoundException ex) {
         Map<String,Object> errors=new HashMap<>();
-        errors.put("comment",ex.getMessage());
+        errors.put("message",ex.getMessage());
         errors.put("timestamp",LocalDateTime.now());
         errors.put("status",HttpStatus.NOT_FOUND.value());
         ApiResponseDTO<Map<String,Object>> response= new ApiResponseDTO<>(false,"comment not found",errors);
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+    }
+
+    @ExceptionHandler(UnauthorizedActionException.class)
+    public ResponseEntity<ApiResponseDTO<Map<String,Object>>> handleUnauthorizedActionException(UnauthorizedActionException ex){
+        Map<String,Object> errors=new HashMap<>();
+        errors.put("message",ex.getMessage());
+        errors.put("timestamp",LocalDateTime.now());
+        errors.put("status",HttpStatus.FORBIDDEN.value());
+        ApiResponseDTO<Map<String,Object>> response=new ApiResponseDTO<>(false, ex.getMessage(),errors);
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
     }
 
 
