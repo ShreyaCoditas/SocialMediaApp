@@ -47,6 +47,17 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
     }
 
+    @ExceptionHandler(CustomException.class)
+    public ResponseEntity<Map<String, Object>> handleCustomException(CustomException ex) {
+        Map<String, Object> errorResponse = new HashMap<>();
+        errorResponse.put("timestamp", LocalDateTime.now());
+        errorResponse.put("status", ex.getStatus().value());
+        errorResponse.put("error", ex.getStatus().getReasonPhrase());
+        errorResponse.put("message", ex.getMessage());
+
+        return ResponseEntity.status(ex.getStatus()).body(errorResponse);
+    }
+
 
 
     @ExceptionHandler(UserAlreadyExistsException.class)

@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class PostCreateDto {
+public class PostCreateDTO {
 
     @NotBlank(message = "Title cannot be blank")
     @Size(min = 2, max = 100, message = "Title must be between 5 and 100 characters")

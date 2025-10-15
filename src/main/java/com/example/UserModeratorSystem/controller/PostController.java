@@ -1,8 +1,7 @@
 package com.example.UserModeratorSystem.controller;
 
-import com.example.UserModeratorSystem.dto.PostCreateDto;
+import com.example.UserModeratorSystem.dto.PostCreateDTO;
 import com.example.UserModeratorSystem.dto.PostDTO;
-//import com.example.UserModeratorSystem.dto.UserPostsByStatusDTO;
 import com.example.UserModeratorSystem.dto.PostWithCommentsDTO;
 import com.example.UserModeratorSystem.dto.ApiResponseDTO;
 import com.example.UserModeratorSystem.constants.Status;
@@ -28,7 +27,7 @@ public class PostController {
     @PreAuthorize("hasAnyRole('MODERATOR', 'SUPER_ADMIN', 'USER')")
     @PostMapping("/publish")
     public ResponseEntity<ApiResponseDTO<PostDTO>> createPost(
-          @Valid @RequestBody PostCreateDto createPostDTO,
+          @Valid @RequestBody PostCreateDTO createPostDTO,
             @AuthenticationPrincipal UserPrincipal userPrincipal
     ) {
         User user = userPrincipal.getUser();
@@ -38,28 +37,12 @@ public class PostController {
 
 
     // homepage
-//    @PreAuthorize("hasAnyRole('MODERATOR', 'SUPER_ADMIN', 'USER')")
-//    @GetMapping
-//    public ResponseEntity<ApiResponseDTO<List<PostWithCommentsDTO>>> getHomepagePosts() {
-//        List<PostWithCommentsDTO> postswithcomments = postService.getHomepagePosts();
-//        return ResponseEntity.ok(new ApiResponseDTO<>(true, "Home Page", postswithcomments));
-//    }
-
-//    @PreAuthorize("hasAnyRole('MODERATOR', 'SUPER_ADMIN', 'USER')")
-//    @GetMapping
-//    public ResponseEntity<ApiResponseDTO<List<PostDTO>>> getHomepagePosts() {
-//        List<PostDTO> posts = postService.getHomepagePosts();
-//        return ResponseEntity.ok(new ApiResponseDTO<>(true, "Home Page", posts));
-//    }
-
     @PreAuthorize("hasAnyRole('MODERATOR', 'SUPER_ADMIN', 'USER')")
     @GetMapping
     public ResponseEntity<ApiResponseDTO<List<PostWithCommentsDTO>>> getHomepagePosts() {
         List<PostWithCommentsDTO> posts = postService.getHomepagePosts();
         return ResponseEntity.ok(new ApiResponseDTO<>(true, "Home Page", posts));
     }
-
-
 
     // Get post by ID
     @PreAuthorize("hasRole('MODERATOR') or hasRole('SUPER_ADMIN')")
@@ -74,7 +57,7 @@ public class PostController {
     @PutMapping("/{postId}")
     public ResponseEntity<ApiResponseDTO<PostDTO>> editPost(
             @PathVariable Long postId,
-            @Valid @RequestBody PostCreateDto updatedPostDTO,
+            @Valid @RequestBody PostCreateDTO updatedPostDTO,
             @AuthenticationPrincipal UserPrincipal userPrincipal
     ) {
         User user = userPrincipal.getUser();
@@ -99,7 +82,6 @@ public class PostController {
         List<PostDTO> posts = postService.getPostsByUserAndStatus(user.getId(), status);
         return ResponseEntity.ok(new ApiResponseDTO<>(true, "Posts retrieved by status", posts));
     }
-
 
 
     @PreAuthorize("hasAnyRole('USER', 'MODERATOR', 'SUPER_ADMIN')")

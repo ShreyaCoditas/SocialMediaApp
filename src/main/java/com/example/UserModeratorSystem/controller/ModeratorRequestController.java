@@ -22,7 +22,7 @@ public class ModeratorRequestController {
     @PostMapping
     public ResponseEntity<ApiResponseDTO<ModeratorRequestDTO>> requestModerator(
             @AuthenticationPrincipal UserPrincipal userPrincipal) {
-        User user = userPrincipal.getUser();  // Fetch actual User entity
+        User user = userPrincipal.getUser();
         ApiResponseDTO<ModeratorRequestDTO> response = userService.createModeratorRequest(user);
         return ResponseEntity.ok(response);
     }

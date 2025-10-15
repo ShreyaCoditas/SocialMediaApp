@@ -1,12 +1,10 @@
 package com.example.UserModeratorSystem.controller;
 
-
 import com.example.UserModeratorSystem.dto.LoginDTO;
 import com.example.UserModeratorSystem.dto.RegisterDTO;
-import com.example.UserModeratorSystem.dto.ResponseDTO;
+import com.example.UserModeratorSystem.dto.LoginResponseDTO;
 import com.example.UserModeratorSystem.dto.ApiResponseDTO;
 import com.example.UserModeratorSystem.entity.User;
-//import com.example.UserModeratorSystem.service.AuthService;
 import com.example.UserModeratorSystem.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,15 +19,7 @@ public class AuthController {
     @Autowired
     private UserService userService;
 
-    // Register API
-//    @PostMapping("/register")
-//    public ResponseEntity<ApiResponseDTO<ResponseDTO>> register(@Valid @RequestBody RegisterDTO userDto) {
-//        User user = service.register(userDto);
-//        ResponseDTO responseDTO = new ResponseDTO("Registration successful for " + user.getUsername());
-//        ApiResponseDTO<ResponseDTO> apiResponseDTO = new ApiResponseDTO<>(true, "User registered successfully",responseDTO);
-//        return ResponseEntity.status(HttpStatus.CREATED).body(apiResponseDTO);
-//    }
-
+    //Register API
     @PostMapping("/register")
     public ResponseEntity<ApiResponseDTO<Void>> register(@Valid @RequestBody RegisterDTO userDto) {
         User user = userService.register(userDto);
@@ -41,9 +31,9 @@ public class AuthController {
 
     // Login API
     @PostMapping("/login")
-    public ResponseEntity<ApiResponseDTO<ResponseDTO>> login(@Valid @RequestBody LoginDTO userDto) {
-        ResponseDTO responseDTO = userService.login(userDto);
-        ApiResponseDTO<ResponseDTO> apiResponseDTO = new ApiResponseDTO<>(true, "Login successful", responseDTO);
+    public ResponseEntity<ApiResponseDTO<LoginResponseDTO>> login(@Valid @RequestBody LoginDTO userDto) {
+        LoginResponseDTO loginResponseDTO = userService.login(userDto);
+        ApiResponseDTO<LoginResponseDTO> apiResponseDTO = new ApiResponseDTO<>(true, "Login successful", loginResponseDTO);
         return ResponseEntity.ok(apiResponseDTO);
     }
 }

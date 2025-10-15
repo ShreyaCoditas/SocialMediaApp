@@ -23,9 +23,7 @@ public class UserPrincipal implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        // Make sure to fetch the role name correctly
         String roleName = "ROLE_" + user.getRole().getName().name();
-        System.out.println("Granted Authority: " + roleName); // optional debug
         return List.of(new SimpleGrantedAuthority(roleName));
     }
 

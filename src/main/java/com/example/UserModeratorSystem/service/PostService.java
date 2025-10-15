@@ -1,21 +1,21 @@
 package com.example.UserModeratorSystem.service;
 
-
 import com.example.UserModeratorSystem.constants.EntityType;
 import com.example.UserModeratorSystem.constants.ReviewAction;
+import com.example.UserModeratorSystem.constants.Status;
 import com.example.UserModeratorSystem.dto.*;
 import com.example.UserModeratorSystem.entity.Post;
-import com.example.UserModeratorSystem.constants.Status;
 import com.example.UserModeratorSystem.entity.ReviewLog;
 import com.example.UserModeratorSystem.entity.User;
+import com.example.UserModeratorSystem.exception.CustomException;
 import com.example.UserModeratorSystem.exception.PostNotFoundException;
 import com.example.UserModeratorSystem.exception.UnauthorizedActionException;
 import com.example.UserModeratorSystem.repository.PostRepository;
 import com.example.UserModeratorSystem.repository.ReviewLogRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -32,105 +32,23 @@ public class PostService {
     @Autowired
     private ObjectMapper objectMapper;
 
-    // Create post
-    public PostDTO createPost(PostCreateDto createPostDTO, User user) {
+    //To create a Post
+    public PostDTO createPost(PostCreateDTO createPostDTO, User user) {
         Post post = new Post();
         post.setUser(user);
         post.setTitle(createPostDTO.getTitle());
         post.setContent(createPostDTO.getContent());
-
-        // SuperAdmin auto-approve
-        if ("SUPER_ADMIN".equals(user.getRole().getName().name())) {
-            post.setStatus(Status.APPROVED);
-        } else {
-            post.setStatus(Status.PENDING);
-        }
+        //superadmin post autoapproved,else pending
+        post.setStatus("SUPER_ADMIN".equals(user.getRole().getName().name())
+                ? Status.APPROVED
+                : Status.PENDING);
 
         post = postRepository.save(post);
-        PostDTO postDTO = objectMapper.convertValue(post, PostDTO.class);
-        postDTO.setUserId(post.getUser().getId()); // Set userId manually
-        postDTO.setUsername(post.getUser().getUsername());//set username manually
-        return postDTO;
+        return mapToPostDTO(post);
     }
 
-    //homepage-to get all approved posts and comments
-//    public List<PostWithCommentsDTO> getHomepagePosts() {
-//        return postRepository.findAll().stream()
-//                .filter(p -> p.getStatus() == Status.APPROVED)
-//                .map(post -> {
-//                    // Convert Post → PostDTO
-//                    PostDTO postDTO = new PostDTO();
-//                    postDTO.setId(post.getId());
-//                    postDTO.setTitle(post.getTitle());
-//                    postDTO.setContent(post.getContent());
-//                    postDTO.setUserId( post.getUser().getId());
-//                    postDTO.setUsername( post.getUser().getUsername());
-//                    postDTO.setStatus(post.getStatus().name());
-//                    postDTO.setCreatedAt(post.getCreatedAt());
-//                    postDTO.setUpdatedAt(post.getUpdatedAt());
-//
-//                    // Convert comments → CommentDTO
-//                    List<CommentDTO> commentDTOs = new ArrayList<>();
-//                    if (post.getComments() != null) {
-//                        commentDTOs = post.getComments().stream()
-//                                .filter(c -> c.getStatus() == Status.APPROVED)
-//                                .map(c -> {
-//                                    CommentDTO dto = new CommentDTO();
-//                                    dto.setId(c.getId());
-//                                    dto.setContent(c.getContent());
-//                                    dto.setPostId(post.getId());
-//                                    dto.setUserId( c.getUser().getId());
-//                                    dto.setUsername( c.getUser().getUsername());
-//                                    dto.setStatus(c.getStatus().name());
-//                                    dto.setCreatedAt(c.getCreatedAt());
-//                                    dto.setUpdatedAt(c.getUpdatedAt());
-//                                    return dto;
-//                                })
-//                                .toList();
-//                    }
-//
-//                    return new PostWithCommentsDTO(postDTO, commentDTOs);
-//                })
-//                .toList();
-//    }
 
-//    public List<PostDTO> getHomepagePosts() {
-//        return postRepository.findAll().stream()
-//                .filter(p -> p.getStatus() == Status.APPROVED)
-//                .map(post -> {
-//                    PostDTO postDTO = new PostDTO();
-//                    postDTO.setId(post.getId());
-//                    postDTO.setUsername(post.getUser().getUsername());
-//                    postDTO.setUserId(post.getUser().getId());
-//                    postDTO.setTitle(post.getTitle());
-//                    postDTO.setContent(post.getContent());
-//                    postDTO.setStatus(post.getStatus().name());
-//                    postDTO.setCreatedAt(post.getCreatedAt());
-//                    postDTO.setUpdatedAt(post.getUpdatedAt());
-//
-//                    // 🟢 Set comments directly inside the postDTO
-//                    List<CommentDTO> commentDTOs = post.getComments().stream()
-//                            .map(c -> {
-//                                CommentDTO dto = new CommentDTO();
-//                                dto.setId(c.getId());
-//                                    dto.setContent(c.getContent());
-//                                    dto.setPostId(post.getId());
-//                                    dto.setUserId( c.getUser().getId());
-//                                    dto.setUsername( c.getUser().getUsername());
-//                                    dto.setStatus(c.getStatus().name());
-//                                    dto.setCreatedAt(c.getCreatedAt());
-//                                    dto.setUpdatedAt(c.getUpdatedAt());
-//                                return dto;
-//                            })
-//                            .toList();
-//
-//                    postDTO.setComments(commentDTOs);
-//
-//                    return postDTO;
-//                })
-//                .toList();
-//    }
-
+    //Retrieve all approved posts and comments for homepage display.
     public List<PostWithCommentsDTO> getHomepagePosts() {
         return postRepository.findAll().stream()
                 .filter(post -> post.getStatus() == Status.APPROVED)
@@ -167,27 +85,16 @@ public class PostService {
     }
 
 
-
-    // Get post by ID
+    //Get a single post by ID.
     public PostDTO getPostById(Long id) {
         Post post = postRepository.findById(id)
                 .orElseThrow(() -> new PostNotFoundException("Post not found"));
-
-        PostDTO postDTO = new PostDTO();
-        postDTO.setId(post.getId());
-        postDTO.setUsername(post.getUser().getUsername());
-        postDTO.setUserId(post.getUser().getId());
-        postDTO.setTitle(post.getTitle());
-        postDTO.setContent(post.getContent());
-        postDTO.setStatus(post.getStatus().name());
-        postDTO.setCreatedAt(post.getCreatedAt());
-        postDTO.setUpdatedAt(post.getUpdatedAt());
-        return postDTO;
+        return mapToPostDTO(post);
     }
 
 
-    // Edit post (only by owner)
-    public PostDTO editPost(Long postId, PostCreateDto updatedPostDTO, User user) {
+    //Edit post (allowed only for owner).
+    public PostDTO editPost(Long postId, PostCreateDTO updatedPostDTO, User user) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new PostNotFoundException("Post not found"));
 
@@ -195,59 +102,43 @@ public class PostService {
             throw new UnauthorizedActionException("You are not authorized to edit this post");
         }
 
-        if(post.getStatus()==Status.REJECTED){
-            throw new RuntimeException("you cannot edit disapproved post");
+        if (post.getStatus() == Status.REJECTED) {
+            throw new CustomException("You cannot edit a disapproved post", HttpStatus.FORBIDDEN);
         }
 
         post.setTitle(updatedPostDTO.getTitle());
         post.setContent(updatedPostDTO.getContent());
         post.setUpdatedAt(LocalDateTime.now());
-        post.setStatus(Status.PENDING); // Re-review required after edit
+        post.setStatus(Status.PENDING); // Requires re-review after editing
 
         post = postRepository.save(post);
-
-        PostDTO postDTO = objectMapper.convertValue(post, PostDTO.class);
-        postDTO.setUserId(post.getUser().getId());
-        postDTO.setUsername(post.getUser().getUsername());
-        return postDTO;
+        return mapToPostDTO(post);
     }
 
-    // Get all posts by a specific user
+
+    //Get all posts by a specific user.
     public List<PostDTO> getPostsByUser(Long userId) {
         return postRepository.findAll().stream()
-                .filter(p -> p.getUser().getId().equals(userId))
-                .map(p -> {
-                    PostDTO dto = objectMapper.convertValue(p, PostDTO.class);
-                    dto.setUserId(p.getUser().getId());
-                    dto.setUsername(p.getUser().getUsername());
-                    return dto;
-                })
+                .filter(post -> post.getUser().getId().equals(userId))
+                .map(this::mapToPostDTO)
                 .collect(Collectors.toList());
     }
 
-    // Get all posts by a specific user with a specific status
+    //Get all posts by a user filtered by status.
     public List<PostDTO> getPostsByUserAndStatus(Long userId, Status status) {
         return postRepository.findAll().stream()
-                .filter(p -> p.getUser().getId().equals(userId) && p.getStatus() == status)
-                .map(p -> {
-                    PostDTO dto = objectMapper.convertValue(p, PostDTO.class);
-                    dto.setUserId(p.getUser().getId());
-                    dto.setUsername(p.getUser().getUsername());
-                    return dto;
-                })
+                .filter(post -> post.getUser().getId().equals(userId) && post.getStatus() == status)
+                .map(this::mapToPostDTO)
                 .collect(Collectors.toList());
     }
 
-
-
-    // Delete post (handles both user and admin cases)
+    //Delete post (Super Admin can delete any,others can delete only their own).
     public String deletePost(Long postId, User user) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new PostNotFoundException("Post not found"));
 
-        // If not SUPER_ADMIN, ensure user owns the post
         String role = user.getRole().getName().name();
-        if (!role.equals("SUPER_ADMIN") && !post.getUser().getId().equals(user.getId())) {
+        if (!"SUPER_ADMIN".equals(role) && !post.getUser().getId().equals(user.getId())) {
             throw new UnauthorizedActionException("You are not authorized to delete this post");
         }
 
@@ -256,49 +147,30 @@ public class PostService {
     }
 
 
-    // Get all  posts
+    //Get all posts by status.
     public List<PostDTO> getPostsByStatus(Status status) {
         return postRepository.findAll().stream()
-                .filter(post -> status == null || post.getStatus() == status) // filter by status if provided
-                .map(post -> {
-                    PostDTO dto = new PostDTO();
-                    dto.setId(post.getId());
-                    dto.setTitle(post.getTitle());
-                    dto.setContent(post.getContent());
-                    dto.setUserId(post.getUser().getId());
-                    dto.setUsername(post.getUser().getUsername());
-                    dto.setStatus(post.getStatus().name());
-                    dto.setCreatedAt(post.getCreatedAt());
-                    dto.setUpdatedAt(post.getUpdatedAt());
-                    return dto;
-                })
+                .filter(post -> status == null || post.getStatus() == status)
+                .map(this::mapToPostDTO)
                 .toList();
     }
 
-
-//    //  Delete post
-//    public String deletePostByAdmin(Long postId) {
-//        Post post = postRepository.findById(postId)
-//                .orElseThrow(() -> new PostNotFoundException("Post not found"));
-//        postRepository.delete(post);
-//        return "Post deleted successfully";
-//    }
-
+    //Review post by moderator or super admin.
     public Map<String, Object> reviewPost(Long postId, User reviewer, ReviewDTO reviewDTO) {
         Post post = postRepository.findById(postId)
-                .orElseThrow(() -> new RuntimeException("Post not found"));
+                .orElseThrow(() -> new PostNotFoundException("Post not found"));
 
         ReviewAction action = ReviewAction.valueOf(reviewDTO.getAction());
 
         if (post.getUser().getId().equals(reviewer.getId())) {
-            throw new RuntimeException("You cannot review your own post");
+            throw new CustomException("You cannot review your own post", HttpStatus.FORBIDDEN);
         }
 
         Optional<ReviewLog> existingLog = reviewLogRepository.findByUserAndEntityIdAndEntityType(
                 reviewer, postId, EntityType.POST
         );
         if (existingLog.isPresent()) {
-            throw new RuntimeException("You already reviewed this post");
+            throw new CustomException("You already reviewed this post", HttpStatus.FORBIDDEN);
         }
 
         ReviewLog log = new ReviewLog();
@@ -332,26 +204,31 @@ public class PostService {
         return response;
     }
 
-        //  helper method to update post status
     private Status updatePostStatus(Post post) {
         List<ReviewLog> reviews = reviewLogRepository.findByEntityIdAndEntityType(post.getId(), EntityType.POST);
         boolean hasApproved = reviews.stream().anyMatch(r -> r.getAction() == ReviewAction.APPROVED);
         boolean hasRejected = reviews.stream().anyMatch(r -> r.getAction() == ReviewAction.REJECTED);
 
-        // If any conflict, reject the post
         if (hasApproved && hasRejected) {
             post.setStatus(Status.REJECTED);
         } else if (hasApproved) {
             post.setStatus(Status.APPROVED);
         } else if (hasRejected) {
             post.setStatus(Status.REJECTED);
-        } else {
-            post.setStatus(Status.PENDING); // no reviews yet
         }
 
         postRepository.save(post);
         return post.getStatus();
     }
 
+    private PostDTO mapToPostDTO(Post post) {
+        PostDTO dto = objectMapper.convertValue(post, PostDTO.class);
 
+        if (post.getUser() != null) {
+            dto.setUserId(post.getUser().getId());
+            dto.setUsername(post.getUser().getUsername());
+        }
+        return dto;
+    }
 }
+

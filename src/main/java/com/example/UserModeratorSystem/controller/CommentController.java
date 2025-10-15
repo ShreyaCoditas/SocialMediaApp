@@ -24,7 +24,6 @@ public class CommentController {
     private CommentService commentService;
 
     // Create comment
-
     @PreAuthorize("hasAnyRole('MODERATOR', 'SUPER_ADMIN', 'USER')")
     @PostMapping("/publish")
     public ResponseEntity<ApiResponseDTO<CommentDTO>> createComment(
@@ -37,7 +36,6 @@ public class CommentController {
     }
 
     // Get comment by ID
-
     @PreAuthorize("hasRole('MODERATOR') or hasRole('SUPER_ADMIN')")
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponseDTO<CommentDTO>> getCommentById(@PathVariable Long id) {

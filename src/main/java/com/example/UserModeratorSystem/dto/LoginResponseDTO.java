@@ -7,14 +7,14 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class ResponseDTO {
+public class LoginResponseDTO {
     private Long id;
     private String username;
     private String email;
     private String token;
     private String role;
 
-    public ResponseDTO(String username) {
+    public LoginResponseDTO(String username) {
     this.username = username;
     }
 }

@@ -8,12 +8,12 @@ import com.example.UserModeratorSystem.repository.*;
 import com.example.UserModeratorSystem.security.JWTUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
-
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -52,20 +52,13 @@ public class UserService {
     private BCryptPasswordEncoder encoder=new BCryptPasswordEncoder(12);
 
     public User register(RegisterDTO userDto){
-
-        //convert email to Lowercase for consistency
         String normalizedEmail=userDto.getEmail().toLowerCase();
-
-        //check if username exists
         if (userRepository.findByUsername(userDto.getUsername()).isPresent()) {
             throw new UserAlreadyExistsException("Username already exists");
         }
-
-        // Check if email already exists
         if (userRepository.findByEmailIgnoreCase(normalizedEmail).isPresent()) {
             throw new EmailAlreadyExistsException("Email already exists");
         }
-
         User user=objectMapper.convertValue(userDto,User.class);
         user.setEmail(normalizedEmail);
         user.setPassword(encoder.encode(userDto.getPassword()));
@@ -74,8 +67,7 @@ public class UserService {
         return userRepository.save(user);
     }
 
-    public ResponseDTO login(LoginDTO userDto) {
-        // First, check if the email exists
+    public LoginResponseDTO login(LoginDTO userDto) {
         User user = userRepository.findByEmailIgnoreCase(userDto.getEmail())
                 .orElseThrow(() -> new EmailNotFoundException("Email not found"));
 
@@ -86,11 +78,10 @@ public class UserService {
             if (authentication.isAuthenticated()) {
                 String jwt = jwtUtil.generateToken(userDto.getEmail().toLowerCase());
                 String role = user.getRole().getName().name();
-                return new ResponseDTO(user.getId(), user.getUsername(), user.getEmail(), jwt, role);
+                return new LoginResponseDTO(user.getId(), user.getUsername(), user.getEmail(), jwt, role);
             } else {
                 throw new InvalidPasswordException("Invalid password");
             }
-
         } catch (org.springframework.security.authentication.BadCredentialsException ex) {
             throw new InvalidPasswordException("Invalid password");
         }
@@ -114,7 +105,6 @@ public class UserService {
         if (existingRequest.isEmpty()) {
             existingRequest = requestRepository.findByUserAndStatus(user, RequestStatus.APPROVED);
         }
-
         ModeratorRequest request;
         String message;
         if (existingRequest.isPresent()) {
@@ -134,7 +124,6 @@ public class UserService {
         if (request.getReviewedBy() != null) {
             dto.setReviewedBy(request.getReviewedBy().getId());
         }
-
         dto.setUsername(request.getUser().getUsername());
         dto.setStatus(request.getStatus().name());
         return new ApiResponseDTO<>(true, message, dto);
@@ -166,25 +155,23 @@ public class UserService {
     //  Approve moderator request
     public ModeratorRequestDTO approveModeratorRequest(Long requestId, User superAdmin) {
         ModeratorRequest request = requestRepository.findById(requestId)
-                .orElseThrow(() -> new RuntimeException("Moderator request not found"));
+                .orElseThrow(() -> new CustomException("Moderator request not found", HttpStatus.NOT_FOUND));
 
         if (request.getStatus() == RequestStatus.APPROVED)
-            throw new RuntimeException("Request already approved");
+            throw new CustomException("Request already approved",HttpStatus.CONFLICT);
         if (request.getStatus() == RequestStatus.REJECTED)
-            throw new RuntimeException("Request already rejected");
+            throw new CustomException("Request already rejected",HttpStatus.CONFLICT);
 
         request.setStatus(RequestStatus.APPROVED);
         request.setReviewedBy(superAdmin);
         request.setReviewedAt(LocalDateTime.now());
         requestRepository.save(request);
-
         // promote user role
         User user = request.getUser();
         if (user != null) {
             user.setRole(roleRepository.findByName(RoleName.MODERATOR));
             userRepository.save(user);
         }
-
         ModeratorRequestDTO dto = new ModeratorRequestDTO();
         dto.setId(request.getId());
         dto.setUserId(user.getId());
@@ -198,42 +185,30 @@ public class UserService {
     // Reject moderator request
     public ModeratorRequestDTO rejectModeratorRequest(Long requestId, User superAdmin) {
         ModeratorRequest request = requestRepository.findById(requestId)
-                .orElseThrow(() -> new RuntimeException("Moderator request not found"));
+                .orElseThrow(() -> new CustomException("Moderator request not found",HttpStatus.NOT_FOUND));
 
         if (request.getStatus() == RequestStatus.REJECTED)
-            throw new RuntimeException("Request already rejected");
+            throw new CustomException("Request already rejected",HttpStatus.CONFLICT);
         if (request.getStatus() == RequestStatus.APPROVED)
-            throw new RuntimeException("Request already approved");
+            throw new CustomException("Request already approved",HttpStatus.CONFLICT);
 
         request.setStatus(RequestStatus.REJECTED);
         request.setReviewedBy(superAdmin);
         request.setReviewedAt(LocalDateTime.now());
         requestRepository.save(request);
-
-//        ModeratorRequestDTO dto = objectMapper.convertValue(request, ModeratorRequestDTO.class);
-//        User user = request.getUser();
-//        dto.setUserId(user!=null?user.getId():null);
-//        dto.setReviewedBy( superAdmin!=null?superAdmin.getId():null);
-//        dto.setUsername(user.getUsername());
-//        dto.setStatus(request.getStatus().name());
-//        return dto;
-
         ModeratorRequestDTO dto = new ModeratorRequestDTO();
         dto.setId(request.getId());
         dto.setUsername(request.getUser().getUsername());
         dto.setUserId(request.getUser().getId());
         dto.setStatus(request.getStatus().name());
         dto.setReviewedBy(superAdmin != null ? superAdmin.getId() : null);
-
         return dto;
-
     }
 
     // Get all users
     public List<UserDTO> getAllUsers() {
         Role userRole = roleRepository.findByName(RoleName.USER);
         List<User> users = userRepository.findByRole(userRole);
-
         return users.stream()
                 .map(user -> {
                     UserDTO dto = new UserDTO();
@@ -251,7 +226,6 @@ public class UserService {
     public List<UserDTO> getAllModerators() {
         Role moderatorRole = roleRepository.findByName(RoleName.MODERATOR);
         List<User> moderators = userRepository.findByRole(moderatorRole);
-
         return moderators.stream()
                 .map(user -> {
                     UserDTO dto = new UserDTO();
@@ -273,15 +247,14 @@ public class UserService {
 
          //  Prevent Super Admin from deleting themselves
         if (user.getId().equals(superAdmin.getId())) {
-            throw new RuntimeException("Super Admin cannot delete themselves");
+            throw new CustomException("Super Admin cannot delete themselves",HttpStatus.FORBIDDEN);
         }
 
         String roleName = user.getRole().getName().name();
         // Prevent deleting moderators or other super admins
         if (roleName.equals("MODERATOR") || roleName.equals("SUPER_ADMIN")) {
-            throw new RuntimeException("Cannot delete a Moderator or Super Admin");
+            throw new CustomException("Cannot delete a Moderator or Super Admin",HttpStatus.FORBIDDEN);
         }
-
         userRepository.delete(user);
         return "User deleted successfully";
     }
@@ -290,10 +263,10 @@ public class UserService {
     //  Delete moderator
     public String deleteModerator(Long moderatorId) {
         User moderator = userRepository.findById(moderatorId)
-                .orElseThrow(() -> new RuntimeException("Moderator not found"));
+                .orElseThrow(() -> new CustomException("Moderator not found",HttpStatus.NOT_FOUND));
 
         if (moderator.getRole().getName() != RoleName.MODERATOR) {
-            throw new RuntimeException("This user is not a moderator");
+            throw new CustomException("This user is not a moderator",HttpStatus.FORBIDDEN);
         }
         userRepository.delete(moderator);
         return "Moderator deleted successfully";
@@ -301,20 +274,15 @@ public class UserService {
 
     //To Retire as Moderator
     public UserDTO retireAsModerator(User user) {
-
         User existingUser = userRepository.findById(user.getId())
                 .orElseThrow(() -> new UserNotFoundException("User not found"));
 
-
         if (!existingUser.getRole().getName().name().equals("MODERATOR")) {
-            throw new RuntimeException("You are not a moderator");
+            throw new CustomException("You are not a moderator",HttpStatus.FORBIDDEN);
         }
-
-
         Role userRole = roleRepository.findByName(RoleName.USER);
         existingUser.setRole(userRole);
         existingUser.setUpdatedAt(LocalDateTime.now());
-
         userRepository.save(existingUser);
         UserDTO dto = new UserDTO();
         dto.setId(existingUser.getId());
@@ -323,6 +291,4 @@ public class UserService {
         dto.setRole(existingUser.getRole().getName().name());
         return dto;
     }
-
-
 }

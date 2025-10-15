@@ -13,7 +13,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
 
 @RestController
@@ -32,7 +31,7 @@ public class AdminController {
     //  View all moderator requests
     @PreAuthorize("hasRole('SUPER_ADMIN')")
     @GetMapping("/moderator-requests")
-    public ResponseEntity<ApiResponseDTO<List<ModeratorRequestDTO>>> getAllRequests(
+    public ResponseEntity<ApiResponseDTO<List<ModeratorRequestDTO>>> getAllModeratorRequests(
             @RequestParam(value = "status", required = false) RequestStatus status) {
 
         List<ModeratorRequestDTO> requests = userService.getModeratorRequestsByStatus(status);
@@ -85,20 +84,4 @@ public class AdminController {
         return ResponseEntity.ok(new ApiResponseDTO<>(true, message));
     }
 
-//    //  Delete a post
-//    @PreAuthorize("hasRole('SUPER_ADMIN')")
-//    @DeleteMapping("/posts/{id}")
-//    public ResponseEntity<ApiResponseDTO<String>> deletePost(@PathVariable Long id) {
-//        String message = postService.deletePostByAdmin(id);
-//        return ResponseEntity.ok(new ApiResponseDTO<>(true, message));
-//    }
-
-//    //  Delete a comment
-//    @PreAuthorize("hasRole('SUPER_ADMIN')")
-//
-//    @DeleteMapping("/comments/{id}")
-//    public ResponseEntity<ApiResponseDTO<String>> deleteComment(@PathVariable Long id) {
-//        String message = commentService.deleteCommentByAdmin(id);
-//        return ResponseEntity.ok(new ApiResponseDTO<>(true, message));
-//    }
 }

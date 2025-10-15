@@ -21,7 +21,7 @@ public class ReviewLog {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "user_id", nullable = false)
+    @JoinColumn(name = "reviewed_by", nullable = false)
     private User user; // reviewer
 
     @Enumerated(EnumType.STRING)

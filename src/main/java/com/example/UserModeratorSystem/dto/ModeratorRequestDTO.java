@@ -13,6 +13,5 @@ public class ModeratorRequestDTO {
     private String username;
     private Long userId;
     private String status; // PENDING, APPROVED, REJECTED
-//    @JsonIgnore
     private Long reviewedBy;
 }

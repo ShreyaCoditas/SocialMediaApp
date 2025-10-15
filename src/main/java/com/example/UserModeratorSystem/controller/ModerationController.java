@@ -11,7 +11,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
 import java.util.Map;
 
@@ -28,7 +27,7 @@ public class ModerationController {
     @Autowired
     private CommentService commentService;
 
-    // Get all  posts
+    // Get all  posts by status
     @PreAuthorize("hasRole('MODERATOR') or hasRole('SUPER_ADMIN')")
     @GetMapping("/posts")
     public ResponseEntity<ApiResponseDTO<List<PostDTO>>> getPostsByStatus(
@@ -38,7 +37,7 @@ public class ModerationController {
         return ResponseEntity.ok(new ApiResponseDTO<>(true, "Posts retrieved", posts));
     }
 
-    // Get all  comments
+    // Get all  comments by status
     @PreAuthorize("hasRole('MODERATOR') or hasRole('SUPER_ADMIN')")
     @GetMapping("/comments")
 
@@ -82,17 +81,6 @@ public ResponseEntity<ApiResponseDTO<UserDTO>> retireAsModerator(
         @AuthenticationPrincipal UserPrincipal userPrincipal) {
 
     UserDTO updatedUser = userService.retireAsModerator(userPrincipal.getUser());
-    return ResponseEntity.ok(new ApiResponseDTO<>(
-            true,
-            "You have successfully retired as a moderator. You are now a regular user.",
-            updatedUser
-    ));
+    return ResponseEntity.ok(new ApiResponseDTO<>(true, "You have successfully retired as a moderator. You are now a regular user.", updatedUser));
 }
-
-
-
-
-
-
-
 }
