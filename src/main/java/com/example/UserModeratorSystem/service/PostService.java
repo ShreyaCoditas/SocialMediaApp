@@ -47,7 +47,6 @@ public class PostService {
         return mapToPostDTO(post);
     }
 
-
     //Retrieve all approved posts and comments for homepage display.
     public List<PostWithCommentsDTO> getHomepagePosts() {
         return postRepository.findAll().stream()
@@ -91,7 +90,6 @@ public class PostService {
                 .orElseThrow(() -> new PostNotFoundException("Post not found"));
         return mapToPostDTO(post);
     }
-
 
     //Edit post (allowed only for owner).
     public PostDTO editPost(Long postId, PostCreateDTO updatedPostDTO, User user) {
@@ -145,7 +143,6 @@ public class PostService {
         postRepository.delete(post);
         return "Post deleted successfully";
     }
-
 
     //Get all posts by status.
     public List<PostDTO> getPostsByStatus(Status status) {

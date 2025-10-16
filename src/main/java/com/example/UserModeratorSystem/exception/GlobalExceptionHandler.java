@@ -48,14 +48,16 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(CustomException.class)
-    public ResponseEntity<Map<String, Object>> handleCustomException(CustomException ex) {
+    public ResponseEntity<ApiResponseDTO<Map<String, Object>> >handleCustomException(CustomException ex) {
         Map<String, Object> errorResponse = new HashMap<>();
         errorResponse.put("timestamp", LocalDateTime.now());
         errorResponse.put("status", ex.getStatus().value());
         errorResponse.put("error", ex.getStatus().getReasonPhrase());
         errorResponse.put("message", ex.getMessage());
+        ApiResponseDTO<Map<String,Object>> response=
+                new ApiResponseDTO<>(false, ex.getMessage(),errorResponse);
 
-        return ResponseEntity.status(ex.getStatus()).body(errorResponse);
+        return ResponseEntity.status(ex.getStatus()).body(response);
     }
 
 

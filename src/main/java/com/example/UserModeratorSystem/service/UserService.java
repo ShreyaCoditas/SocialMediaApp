@@ -152,58 +152,7 @@ public class UserService {
     }
 
 
-    //  Approve moderator request
-    public ModeratorRequestDTO approveModeratorRequest(Long requestId, User superAdmin) {
-        ModeratorRequest request = requestRepository.findById(requestId)
-                .orElseThrow(() -> new CustomException("Moderator request not found", HttpStatus.NOT_FOUND));
 
-        if (request.getStatus() == RequestStatus.APPROVED)
-            throw new CustomException("Request already approved",HttpStatus.CONFLICT);
-        if (request.getStatus() == RequestStatus.REJECTED)
-            throw new CustomException("Request already rejected",HttpStatus.CONFLICT);
-
-        request.setStatus(RequestStatus.APPROVED);
-        request.setReviewedBy(superAdmin);
-        request.setReviewedAt(LocalDateTime.now());
-        requestRepository.save(request);
-        // promote user role
-        User user = request.getUser();
-        if (user != null) {
-            user.setRole(roleRepository.findByName(RoleName.MODERATOR));
-            userRepository.save(user);
-        }
-        ModeratorRequestDTO dto = new ModeratorRequestDTO();
-        dto.setId(request.getId());
-        dto.setUserId(user.getId());
-        dto.setUsername(user.getUsername());
-        dto.setReviewedBy(superAdmin.getId());
-        dto.setStatus(request.getStatus().name());
-        return dto;
-    }
-
-
-    // Reject moderator request
-    public ModeratorRequestDTO rejectModeratorRequest(Long requestId, User superAdmin) {
-        ModeratorRequest request = requestRepository.findById(requestId)
-                .orElseThrow(() -> new CustomException("Moderator request not found",HttpStatus.NOT_FOUND));
-
-        if (request.getStatus() == RequestStatus.REJECTED)
-            throw new CustomException("Request already rejected",HttpStatus.CONFLICT);
-        if (request.getStatus() == RequestStatus.APPROVED)
-            throw new CustomException("Request already approved",HttpStatus.CONFLICT);
-
-        request.setStatus(RequestStatus.REJECTED);
-        request.setReviewedBy(superAdmin);
-        request.setReviewedAt(LocalDateTime.now());
-        requestRepository.save(request);
-        ModeratorRequestDTO dto = new ModeratorRequestDTO();
-        dto.setId(request.getId());
-        dto.setUsername(request.getUser().getUsername());
-        dto.setUserId(request.getUser().getId());
-        dto.setStatus(request.getStatus().name());
-        dto.setReviewedBy(superAdmin != null ? superAdmin.getId() : null);
-        return dto;
-    }
 
     // Get all users
     public List<UserDTO> getAllUsers() {
@@ -290,5 +239,41 @@ public class UserService {
         dto.setEmail(existingUser.getEmail());
         dto.setRole(existingUser.getRole().getName().name());
         return dto;
+    }
+
+    public ModeratorRequestDTO reviewModeratorRequest(Long id, ReviewAction reviewAction, User superAdmin) {
+        ModeratorRequest request = requestRepository.findById(id)
+                .orElseThrow(() -> new CustomException("Moderator Request Id not found", HttpStatus.NOT_FOUND));
+
+        if (request.getStatus() == RequestStatus.APPROVED)
+            throw new CustomException("Request Already Approved", HttpStatus.CONFLICT);
+        if (request.getStatus() == RequestStatus.REJECTED)
+            throw new CustomException("Request Already Rejected", HttpStatus.CONFLICT);
+
+        if (reviewAction == ReviewAction.APPROVED) {
+            request.setStatus(RequestStatus.APPROVED);
+            //promote user to moderator
+            User user = request.getUser();
+            if (user != null) {
+                user.setRole(roleRepository.findByName(RoleName.MODERATOR));
+                userRepository.save(user);
+            }
+        } else if (reviewAction == ReviewAction.REJECTED) {
+            request.setStatus(RequestStatus.REJECTED);
+        }
+
+        request.setReviewedBy(superAdmin);
+        request.setReviewedAt(LocalDateTime.now());
+        requestRepository.save(request);
+
+        ModeratorRequestDTO dto =new ModeratorRequestDTO();
+        dto.setId(request.getId());
+        dto.setUserId(request.getUser().getId());
+        dto.setReviewedBy(superAdmin.getId());
+        dto.setStatus(request.getStatus().name());
+        dto.setUsername(request.getUser().getUsername());
+        return dto;
+
+
     }
 }

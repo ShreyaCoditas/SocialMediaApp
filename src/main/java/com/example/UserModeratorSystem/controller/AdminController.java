@@ -1,8 +1,10 @@
 package com.example.UserModeratorSystem.controller;
 
+import com.example.UserModeratorSystem.constants.ReviewAction;
 import com.example.UserModeratorSystem.dto.ModeratorRequestDTO;
 import com.example.UserModeratorSystem.dto.ApiResponseDTO;
 import com.example.UserModeratorSystem.constants.RequestStatus;
+import com.example.UserModeratorSystem.dto.ReviewActionDTO;
 import com.example.UserModeratorSystem.entity.User;
 import com.example.UserModeratorSystem.security.UserPrincipal;
 import com.example.UserModeratorSystem.service.CommentService;
@@ -39,29 +41,45 @@ public class AdminController {
     }
 
 
-    // Approve moderator request
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
-    @PostMapping("/moderator-requests/{id}/approve")
-    public ResponseEntity<ApiResponseDTO<ModeratorRequestDTO>> approveModerator(
-            @PathVariable Long id,
-            @AuthenticationPrincipal UserPrincipal userPrincipal) {
+//    // Approve moderator request
+//    @PreAuthorize("hasRole('SUPER_ADMIN')")
+//    @PostMapping("/moderator-requests/{id}/approve")
+//    public ResponseEntity<ApiResponseDTO<ModeratorRequestDTO>> approveModerator(
+//            @PathVariable Long id,
+//            @AuthenticationPrincipal UserPrincipal userPrincipal) {
+//
+//        User superAdmin = userPrincipal.getUser();
+//        ModeratorRequestDTO dto = userService.approveModeratorRequest(id, superAdmin);
+//        return ResponseEntity.ok(new ApiResponseDTO<>(true, "Moderator request approved", dto));
+//    }
 
-        User superAdmin = userPrincipal.getUser();
-        ModeratorRequestDTO dto = userService.approveModeratorRequest(id, superAdmin);
-        return ResponseEntity.ok(new ApiResponseDTO<>(true, "Moderator request approved", dto));
+//    //  Reject moderator request
+//    @PreAuthorize("hasRole('SUPER_ADMIN')")
+//    @PostMapping("/moderator-requests/{id}/reject")
+//    public ResponseEntity<ApiResponseDTO<ModeratorRequestDTO>> rejectModerator(
+//            @PathVariable Long id,
+//            @AuthenticationPrincipal UserPrincipal userPrincipal) {
+//
+//        User superAdmin = userPrincipal.getUser();
+//        ModeratorRequestDTO dto = userService.rejectModeratorRequest(id, superAdmin);
+//        return ResponseEntity.ok(new ApiResponseDTO<>(true, "Moderator request rejected", dto));
+//    }
+
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    @PostMapping("/moderator-requests/{id}/review")
+    public ResponseEntity<ApiResponseDTO<ModeratorRequestDTO>> reviewModeratorRequest(
+            @PathVariable Long id,
+            @RequestBody ReviewActionDTO reviewActionDTO,
+            @AuthenticationPrincipal UserPrincipal userPrincipal){
+        User superAdmin=userPrincipal.getUser();
+        ModeratorRequestDTO moderatorRequestDTO=userService.reviewModeratorRequest(id,reviewActionDTO.getReviewAction(),superAdmin);
+        String message= (reviewActionDTO.getReviewAction()== ReviewAction.APPROVED)
+                ?"Moderator Request Approved"
+                :"Moderator Request Rejected";
+
+        return ResponseEntity.ok(new ApiResponseDTO<>(true,message,moderatorRequestDTO));
     }
 
-    //  Reject moderator request
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
-    @PostMapping("/moderator-requests/{id}/reject")
-    public ResponseEntity<ApiResponseDTO<ModeratorRequestDTO>> rejectModerator(
-            @PathVariable Long id,
-            @AuthenticationPrincipal UserPrincipal userPrincipal) {
-
-        User superAdmin = userPrincipal.getUser();
-        ModeratorRequestDTO dto = userService.rejectModeratorRequest(id, superAdmin);
-        return ResponseEntity.ok(new ApiResponseDTO<>(true, "Moderator request rejected", dto));
-    }
 
     // Delete a user
     @PreAuthorize("hasRole('SUPER_ADMIN')")
